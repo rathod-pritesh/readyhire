@@ -12,7 +12,7 @@ class Settings:
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
     PRIMARY_MODEL: str = os.getenv("PRIMARY_MODEL", "gemini-2.5-flash")
     FALLBACK_MODEL: str = os.getenv("FALLBACK_MODEL", "google/gemini-2.5-flash")
-    ALLOWED_ORIGINS: list[str] = ["http://localhost:5173"]
+    ALLOWED_ORIGINS: list[str] = ["http://localhost:5173", "https://readyhire.vercel.app", "http://127.0.0.1:5173"]
 
     @property
     def GEMINI_MODEL(self) -> str:
