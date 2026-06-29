@@ -10,10 +10,8 @@
 			<!-- Branding -->
 			<div class="flex flex-col gap-3 sm:col-span-2">
 				<div class="flex items-center gap-2">
-					<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#2E4540] to-[#408175] text-white">
-						<Sparkles class="h-4 w-4" />
-					</div>
-					<span class="font-bold text-lg text-foreground">ReadyHire</span>
+					<img src="/readyhire_logo.png" alt="ReadyHire Logo" class="h-8 w-8 object-contain rounded-lg shadow-sm dark:invert-0 invert" />
+					<span class="font-extrabold text-lg md:text-xl text-foreground">ReadyHire</span>
 				</div>
 				<p class="max-w-xs text-sm text-muted-foreground leading-relaxed">
 					Optimize your application with AI-powered resume parsing and ATS keyword analysis. Land your dream job.

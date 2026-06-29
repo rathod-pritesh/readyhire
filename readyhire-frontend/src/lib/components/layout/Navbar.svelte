@@ -36,11 +36,9 @@
 		<div class="flex h-16 items-center justify-between">
 			<!-- Logo -->
 			<div class="flex items-center gap-2">
-				<a href="/" class="flex items-center gap-2 font-bold text-xl tracking-tight text-foreground transition-all hover:opacity-90">
-					<div class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#2E4540] to-[#408175] text-white shadow-sm shadow-[#2E4540]/30">
-						<Sparkles class="h-5 w-5" />
-					</div>
-					<span class="bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">ReadyHire</span>
+				<a href="/" class="flex items-center gap-2 font-bold tracking-tight text-foreground transition-all hover:opacity-90">
+					<img src="/readyhire_logo.png" alt="ReadyHire Logo" class="h-10 w-10 object-contain rounded-xl shadow-sm dark:invert-0 invert" />
+					<span class="font-extrabold text-xl md:text-2xl text-foreground">ReadyHire</span>
 				</a>
 			</div>
 
