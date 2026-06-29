@@ -1,6 +1,7 @@
 <script>
 	import Container from "./Container.svelte";
-	import { Sparkles, Code, Globe, Link } from "@lucide/svelte";
+	import { Sparkles } from "@lucide/svelte";
+	import { page } from "$app/stores";
 </script>
 
 <footer class="border-t border-border/40 bg-background/50 py-12 md:py-16 transition-colors duration-300">
@@ -23,26 +24,19 @@
 			<div class="flex flex-col gap-3">
 				<h3 class="font-semibold text-sm text-foreground uppercase tracking-wider">Product</h3>
 				<ul class="space-y-2 text-sm">
-					<li><a href="#analyzer" class="text-muted-foreground hover:text-foreground transition-colors">Resume Analyzer</a></li>
-					<li><a href="#features" class="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
-					<li><a href="#pricing" class="text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
+					<li><a href="/#analyzer" class="text-muted-foreground hover:text-foreground transition-colors">Resume Analyzer</a></li>
 				</ul>
 			</div>
 
-			<!-- Connect / Social -->
+			<!-- Resources Links -->
 			<div class="flex flex-col gap-3">
-				<h3 class="font-semibold text-sm text-foreground uppercase tracking-wider">Connect</h3>
-				<div class="flex items-center gap-4 text-muted-foreground">
-					<a href="https://twitter.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#408175] transition-colors" aria-label="Twitter">
-						<Globe class="h-5 w-5" />
-					</a>
-					<a href="https://github.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#408175] transition-colors" aria-label="GitHub">
-						<Code class="h-5 w-5" />
-					</a>
-					<a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="hover:text-[#408175] transition-colors" aria-label="LinkedIn">
-						<Link class="h-5 w-5" />
-					</a>
-				</div>
+				<h3 class="font-semibold text-sm text-foreground uppercase tracking-wider">Resources</h3>
+				<ul class="space-y-2 text-sm">
+					<li><a href="/features" class="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
+					<li><a href="/how-it-works" class="text-muted-foreground hover:text-foreground transition-colors">How It Works</a></li>
+					<li><a href="/pricing" class="text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
+					<li><a href="/faqs" class="text-muted-foreground hover:text-foreground transition-colors">FAQs</a></li>
+				</ul>
 			</div>
 		</div>
 
@@ -50,10 +44,11 @@
 			<p class="text-xs text-muted-foreground">
 				&copy; {new Date().getFullYear()} ReadyHire. All rights reserved.
 			</p>
-			<div class="flex gap-6 text-xs text-muted-foreground">
-				<a href="#privacy" class="hover:text-foreground transition-colors">Privacy Policy</a>
-				<a href="#terms" class="hover:text-foreground transition-colors">Terms of Service</a>
+			<div class="flex gap-6 text-xs">
+				<a href="/privacy-policy" class="hover:text-foreground transition-colors {$page.url.pathname === '/privacy-policy' ? 'text-foreground underline decoration-[#408175] decoration-2 underline-offset-4 font-semibold' : 'text-muted-foreground'}">Privacy Policy</a>
+				<a href="/terms-of-service" class="hover:text-foreground transition-colors {$page.url.pathname === '/terms-of-service' ? 'text-foreground underline decoration-[#408175] decoration-2 underline-offset-4 font-semibold' : 'text-muted-foreground'}">Terms of Service</a>
 			</div>
 		</div>
 	</Container>
 </footer>
+
