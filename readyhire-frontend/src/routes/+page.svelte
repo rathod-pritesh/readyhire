@@ -18,6 +18,7 @@
 	import { Sparkles, ArrowRight, Loader2, RefreshCw, FileText, CheckCircle2, AlertCircle, Info } from "@lucide/svelte";
 	import { fade, slide } from "svelte/transition";
 	import { onMount } from "svelte";
+	import { analyzeResume } from "$lib/api/api.js";
 
 	// Page state
 	let uploadedFile = $state(null);
@@ -26,9 +27,16 @@
 	let analysisCompleted = $state(false);
 	let analysisProgress = $state(0);
 	let currentStepMessage = $state("");
+	let error = $state(null);
+	let reportData = $state(null);
 
 	// Character and word counters
 	const wordCount = $derived(jobDescription ? jobDescription.trim().split(/\s+/).filter(Boolean).length : 0);
+
+	// Derived lists for keywords component
+	const matchingKeywords = $derived(reportData ? reportData.ats_keywords.filter(k => k.status === 'matched').map(k => k.keyword) : []);
+	const missingKeywords = $derived(reportData ? reportData.ats_keywords.filter(k => k.status === 'missing').map(k => k.keyword) : []);
+	const keywordPercentage = $derived(reportData ? Math.round((matchingKeywords.length / (reportData.ats_keywords.length || 1)) * 100) + "%" : "");
 
 	// Steps for loading animation
 	const loadingSteps = [
@@ -38,13 +46,24 @@
 		{ min: 75, max: 100, message: "Calculating compatibility scores & preparing recommendations..." }
 	];
 
-	function loadSampleData() {
-		// Mock a File object
-		const mockBlob = new Blob(["Resume Content"], { type: "application/pdf" });
-		uploadedFile = new File([mockBlob], "alex_frontend_engineer_resume.pdf", {
-			type: "application/pdf",
-			lastModified: new Date().getTime()
-		});
+	async function loadSampleData() {
+		try {
+			const response = await fetch("/pritesh_frontend_engineer_resume.docx");
+			if (!response.ok) throw new Error("Failed to fetch sample resume docx");
+			const blob = await response.blob();
+			uploadedFile = new File([blob], "pritesh_frontend_engineer_resume.docx", {
+				type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				lastModified: new Date().getTime()
+			});
+		} catch (e) {
+			console.error("Error loading sample data:", e);
+			// Fallback to mock file object if fetch fails
+			const mockBlob = new Blob(["Pritesh Resume Details"], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+			uploadedFile = new File([mockBlob], "pritesh_frontend_engineer_resume.docx", {
+				type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				lastModified: new Date().getTime()
+			});
+		}
 
 		jobDescription = `We are looking for a Frontend Engineer with strong experience in Svelte or React, JavaScript, and Tailwind CSS.
 
@@ -56,32 +75,25 @@ Key requirements:
 - Familiarity with CI/CD pipelines, Jest/Vitest for unit testing, and Agile/Scrum methodologies`;
 	}
 
-	function runAnalysis() {
+	async function runAnalysis() {
 		if (!uploadedFile || !jobDescription.trim()) return;
 
 		isAnalyzing = true;
 		analysisCompleted = false;
+		error = null;
 		analysisProgress = 0;
 		currentStepMessage = loadingSteps[0].message;
 
-		const duration = 3000; // 3 seconds total simulation
+		// Timer to simulate progress up to 92%
+		const maxSimulatedProgress = 92;
+		const duration = 5000; // 5 seconds
 		const intervalTime = 50;
-		const stepIncrement = 100 / (duration / intervalTime);
+		const totalSteps = duration / intervalTime;
+		const stepIncrement = maxSimulatedProgress / totalSteps;
 
 		const timer = setInterval(() => {
-			analysisProgress += stepIncrement;
-			if (analysisProgress >= 100) {
-				analysisProgress = 100;
-				clearInterval(timer);
-				setTimeout(() => {
-					isAnalyzing = false;
-					analysisCompleted = true;
-					// Scroll to report view after rendering
-					setTimeout(() => {
-						document.getElementById("report-results")?.scrollIntoView({ behavior: "smooth" });
-					}, 150);
-				}, 400);
-			} else {
+			if (analysisProgress < maxSimulatedProgress) {
+				analysisProgress += stepIncrement;
 				// Update progress message based on progress bracket
 				const activeStep = loadingSteps.find(step => analysisProgress >= step.min && analysisProgress < step.max);
 				if (activeStep) {
@@ -89,11 +101,42 @@ Key requirements:
 				}
 			}
 		}, intervalTime);
+
+		try {
+			const result = await analyzeResume(uploadedFile, jobDescription);
+			
+			// Clear simulation timer
+			clearInterval(timer);
+			
+			// Fill progress to 100% smoothly
+			analysisProgress = 100;
+			currentStepMessage = "Analysis complete!";
+			
+			// Let user see 100% progress for a brief moment, then display report
+			setTimeout(() => {
+				reportData = result;
+				isAnalyzing = false;
+				analysisCompleted = true;
+				
+				// Scroll to report view after rendering
+				setTimeout(() => {
+					document.getElementById("report-results")?.scrollIntoView({ behavior: "smooth" });
+				}, 150);
+			}, 300);
+
+		} catch (err) {
+			clearInterval(timer);
+			isAnalyzing = false;
+			analysisCompleted = false;
+			error = err.message || "An unexpected error occurred.";
+		}
 	}
 
 	function resetAnalyzer() {
 		uploadedFile = null;
 		jobDescription = "";
+		reportData = null;
+		error = null;
 		analysisCompleted = false;
 		analysisProgress = 0;
 		currentStepMessage = "";
@@ -144,7 +187,7 @@ Key requirements:
 	<main id="analyzer" class="pb-24">
 		<Container>
 			<!-- Analyzer Input Panel -->
-			{#if !isAnalyzing && !analysisCompleted}
+			{#if !isAnalyzing && !analysisCompleted && !error}
 				<div
 					in:fade={{ duration: 300 }}
 					class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start rounded-3xl border border-border/60 bg-card/60 backdrop-blur-md p-6 md:p-8 shadow-xl relative"
@@ -228,13 +271,50 @@ Key requirements:
 						<div class="flex items-center gap-3 w-full sm:w-auto">
 							<button
 								onclick={runAnalysis}
-								disabled={!uploadedFile || !jobDescription.trim()}
+								disabled={!uploadedFile || !jobDescription.trim() || isAnalyzing}
 								class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2E4540] hover:bg-[#408175] disabled:bg-muted disabled:text-muted-foreground disabled:border-border font-semibold text-white px-6 shadow-sm shadow-[#2E4540]/30 disabled:shadow-none transition-all active:scale-[0.98] w-full sm:w-auto shrink-0 select-none cursor-pointer disabled:cursor-not-allowed"
 							>
 								<Sparkles class="h-4.5 w-4.5" />
 								<span>Analyze Application</span>
 							</button>
 						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Error State -->
+			{#if error}
+				<div
+					in:fade={{ duration: 200 }}
+					class="flex flex-col items-center justify-center min-h-[350px] rounded-3xl border border-[#D95C5C]/20 bg-[#D95C5C]/5 backdrop-blur-md p-8 md:p-12 text-center max-w-xl mx-auto shadow-xl space-y-6"
+				>
+					<div class="relative flex items-center justify-center">
+						<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#D95C5C]/15 text-[#D95C5C]">
+							<AlertCircle class="h-8 w-8" />
+						</div>
+					</div>
+
+					<div class="space-y-2">
+						<h3 class="font-bold text-xl text-foreground">Analysis Failed</h3>
+						<p class="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+							{error}
+						</p>
+					</div>
+
+					<div class="flex flex-col sm:flex-row items-center justify-center gap-3 w-full pt-2">
+						<button
+							onclick={runAnalysis}
+							class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2E4540] hover:bg-[#408175] font-semibold text-white px-6 shadow-sm shadow-[#2E4540]/30 transition-all active:scale-[0.98] w-full sm:w-auto cursor-pointer"
+						>
+							<RefreshCw class="h-4 w-4" />
+							<span>Retry Analysis</span>
+						</button>
+						<button
+							onclick={() => { error = null; isAnalyzing = false; analysisCompleted = false; }}
+							class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 text-sm font-semibold text-foreground hover:bg-muted transition-all active:scale-[0.98] w-full sm:w-auto cursor-pointer"
+						>
+							<span>Edit Inputs</span>
+						</button>
 					</div>
 				</div>
 			{/if}
@@ -273,7 +353,7 @@ Key requirements:
 			{/if}
 
 			<!-- Empty State / Analysis Report -->
-			{#if analysisCompleted}
+			{#if analysisCompleted && reportData}
 				<div
 					id="report-results"
 					in:fade={{ duration: 400 }}
@@ -308,49 +388,57 @@ Key requirements:
 					<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
 						<!-- Match Score: Spans 5 columns -->
 						<div class="lg:col-span-5 flex flex-col h-full">
-							<MatchScore score={78} />
+							<MatchScore 
+								score={reportData.readiness_score} 
+								{keywordPercentage} 
+							/>
 						</div>
 
 						<!-- Keywords: Spans 7 columns -->
 						<div class="lg:col-span-7 flex flex-col h-full">
-							<ATSKeywords />
+							<ATSKeywords 
+								matching={matchingKeywords} 
+								missing={missingKeywords} 
+							/>
 						</div>
 					</div>
 
 					<!-- Technical Gaps & Extracted Skills -->
 					<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
 						<div class="lg:col-span-6 flex flex-col h-full">
-							<MissingSkills />
+							<MissingSkills skills={reportData.missing_skills} />
 						</div>
 
 						<div class="lg:col-span-6 flex flex-col h-full">
-							<SkillsCard />
+							<SkillsCard categories={reportData.matched_skills} />
 						</div>
 					</div>
 
 					<!-- Formatting Quality Checklist & Rewrite Recommendations -->
 					<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 						<div class="lg:col-span-5 flex flex-col gap-6">
-							<ChecklistCard />
+							<ChecklistCard items={reportData.checklist} />
 						</div>
 
 						<div class="lg:col-span-7 flex flex-col gap-6">
-							<ResumeImprovements />
+							<ResumeImprovements improvements={reportData.resume_improvements} />
 						</div>
 					</div>
 
 					<!-- Interview Prep Questions -->
 					<div class="grid grid-cols-1 gap-8">
-						<InterviewCard />
+						<InterviewCard questions={reportData.interview_questions} />
 					</div>
 
 					<!-- Tailored Cover Letter -->
 					<div class="grid grid-cols-1 gap-8">
-						<CoverLetterCard />
+						<CoverLetterCard draft={reportData.cover_letter} />
 					</div>
 
-					<!-- Download and Save Banner -->
-					<DownloadReport />
+					<!-- Download and Save Banner (Temporarily hidden until PDF export is fully implemented) -->
+					{#if false}
+						<DownloadReport />
+					{/if}
 				</div>
 			{/if}
 		</Container>

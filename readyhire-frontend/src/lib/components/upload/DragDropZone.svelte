@@ -1,11 +1,13 @@
 <script>
 	import { UploadCloud, FileText } from "@lucide/svelte";
+	import { slide } from "svelte/transition";
 
 	// Svelte 5 callback props
 	let { onFileSelected, accept = ".pdf,.docx,.txt" } = $props();
 
 	let isDragging = $state(false);
 	let fileInputRef = $state(null);
+	let validationError = $state("");
 
 	function handleDragOver(e) {
 		e.preventDefault();
@@ -40,14 +42,15 @@
 		const extension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
 		const acceptedExtensions = accept.split(",");
 		if (!acceptedExtensions.includes(extension)) {
-			alert(`Invalid file type. Please upload one of the following: ${accept}`);
+			validationError = `Invalid file type. Please upload one of: ${accept}`;
 			return false;
 		}
 		// Max file size: 10MB
 		if (file.size > 10 * 1024 * 1024) {
-			alert("File is too large. Maximum size is 10MB.");
+			validationError = "File is too large. Maximum size is 10MB.";
 			return false;
 		}
+		validationError = "";
 		return true;
 	}
 
@@ -95,4 +98,10 @@
 	<div class="inline-flex h-9 items-center justify-center rounded-lg bg-secondary px-4 text-sm font-medium text-secondary-foreground border border-border shadow-sm hover:bg-secondary/80 hover:text-foreground transition-all">
 		Browse Files
 	</div>
+
+	{#if validationError}
+		<p class="mt-4 text-xs text-[#D95C5C] font-semibold" transition:slide={{ duration: 150 }}>
+			{validationError}
+		</p>
+	{/if}
 </div>

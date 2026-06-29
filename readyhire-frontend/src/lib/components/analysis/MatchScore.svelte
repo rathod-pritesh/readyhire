@@ -3,7 +3,7 @@
 	import { Sparkles, ArrowUpRight, TrendingUp } from "@lucide/svelte";
 	import { fly } from "svelte/transition";
 
-	let { score = 0 } = $props();
+	let { score = 0, keywordPercentage = "" } = $props();
 
 	let animatedScore = $state(0);
 
@@ -105,7 +105,7 @@
 		<div class="flex flex-col gap-1">
 			<span class="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Keywords</span>
 			<span class="text-base font-semibold text-foreground flex items-center gap-1">
-				{score >= 80 ? "85%" : score >= 60 ? "72%" : "48%"}
+				{keywordPercentage || (score >= 80 ? "85%" : score >= 60 ? "72%" : "48%")}
 				<TrendingUp class="h-3.5 w-3.5 text-[#408175]" />
 			</span>
 		</div>
